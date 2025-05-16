@@ -71,7 +71,7 @@ with tabs[0]:
         ))
 
     fig_global.update_layout(
-        title="Total KPI Status (Global)",
+        title="Total KPI Status",
         yaxis_title="Jumlah KPI",
         xaxis_title="Status",
         barmode='stack',
@@ -202,7 +202,7 @@ with tabs[0]:
         )
         st.plotly_chart(fig_detail, use_container_width=True)
 
-    st.markdown("<h3 style='font-size:20px;'>📌 Daftar KPI dengan Status Hitam (Data tidak lengkap)</h3>")
+    st.markdown("📌 Daftar KPI dengan Status N/A (Data tidak lengkap)")
     df_hitam = df[df['Status'] == 'Hitam'][['Kode KPI', 'KPI']]
     if df_hitam.empty:
         st.info("Tidak ada KPI dengan status Hitam.")
