@@ -51,7 +51,7 @@ with tabs[0]:
     status_order = ['Hitam', 'Hijau', 'Kuning', 'Merah']
 
     def get_status_counts(data):
-    return {
+     return {
         "Merah": (data['Status'] == "Merah").sum(),
         "Kuning": (data['Status'] == "Kuning").sum(),
         "Hijau": (data['Status'] == "Hijau").sum(),
