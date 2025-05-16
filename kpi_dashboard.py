@@ -30,11 +30,8 @@ with tabs[0]:
             st.stop()
 
     # Normalisasi kolom 'Achv Mar' ke bentuk numerik
-    df['Achv Mar Num'] = pd.to_numeric(
-        df['Achv Mar'].str.strip().str.replace('%', '').str.replace(',', '.'), errors='coerce'
-    )
+       df['Achv Mar Num'] = pd.to_numeric(df['Achv Mar'].str.replace('%','').str.replace(',','.'), errors='coerce')
 
-    # Fungsi untuk menentukan status berdasarkan Achv Mar
     def get_status(achv):
         if pd.isna(achv):
             return 'Hitam'
@@ -44,10 +41,8 @@ with tabs[0]:
             return 'Kuning'
         else:
             return 'Hijau'
-
     df['Status'] = df['Achv Mar Num'].apply(get_status)
 
-    # ========== WARNA ==========
     COLOR_RED = "#b42020"
     COLOR_BLUE = "#0f098e"
     COLOR_WHITE = "#ffffff"
@@ -61,10 +56,8 @@ with tabs[0]:
         "Hijau": COLOR_GREEN,
         "Hitam": COLOR_BLACK
     }
-
     status_order = ['Hitam', 'Hijau', 'Kuning', 'Merah']
 
-    # ========== FUNGSI HITUNG STATUS ==========
     def get_status_counts(data):
         return {
             "Merah": (data['Status'] == "Merah").sum(),
@@ -72,6 +65,7 @@ with tabs[0]:
             "Hijau": (data['Status'] == "Hijau").sum(),
             "Hitam": (data['Status'] == "Hitam").sum()
         }
+
 
     global_counts = get_status_counts(df)
     fig_global = go.Figure()
