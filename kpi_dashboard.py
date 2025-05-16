@@ -12,33 +12,42 @@ tabs = st.tabs(["KPI Dashboard", "Strategic Initiatives"])
 
 # ================== TAB 1: KPI DASHBOARD ==================
 with tabs[0]:
+    # ========== LOAD DATA ==========
     file_path = "Dashboard 10.csv"
+    if not os.path.exists(file_path):
+        st.error(f"File '{file_path}' tidak ditemukan.")
+        st.stop()
+
     df = pd.read_csv(file_path)
 
+    # ========== DATA PREPARATION ==========
     required_cols = ['Perspective', 'Kode KPI', 'KPI', 'Target Tahunan', 'Measurement Type',
-                     'Target Jan', 'Actual Jan', 'Achv Jan', 'Target Feb', 'Actual Feb', 'Achv Feb','Target Mar', 'Actual Mar', 'Achv Mar', 'Target Apr','Actual Apr', 'Achv Apr','Target Mei', 'Actual Mei', 'Achv Mei', 'Target Jun', 'Actual Jun', 'Achv Jun','Target Jul', 'Actual Jul', 'Achv Jul', 'Target Aug','Actual Aug', 'Achv Aug','Target Sep', 'Actual Sep', 'Achv Sep', 'Target Oct', 'Actual Oct', 'Achv Oct','Target Nov', 'Actual Nov', 'Achv Nov', 'Target Dec','Actual Dec', 'Achv Dec']
+                     'Target Jan', 'Actual Jan', 'Achv Jan', 'Target Feb', 'Actual Feb', 'Achv Feb',
+                     'Target Mar', 'Actual Mar', 'Achv Mar']
     for col in required_cols:
         if col not in df.columns:
             st.error(f"Kolom '{col}' tidak ditemukan di data.")
             st.stop()
 
     # Normalisasi kolom 'Achv Mar' ke bentuk numerik
-        df['Achv Mar Num'] = pd.to_numeric(df['Achv Mar'].str.replace('%', '').str.replace(',', '.'), errors='coerce')
-        
-        # Fungsi get_status tetap sama
-        def get_status(achv):
-            if pd.isna(achv):
-                return 'Hitam'
-            elif achv < 70:
-                return 'Merah'
-            elif 70 <= achv <= 99:
-                return 'Kuning'
-            else:
-                return 'Hijau'
-        
-        # Hitung status berdasarkan Achv Mar
-        df['Status'] = df['Achv Mar Num'].apply(get_status)
+    df['Achv Mar Num'] = pd.to_numeric(
+        df['Achv Mar'].str.strip().str.replace('%', '').str.replace(',', '.'), errors='coerce'
+    )
 
+    # Fungsi untuk menentukan status berdasarkan Achv Mar
+    def get_status(achv):
+        if pd.isna(achv):
+            return 'Hitam'
+        elif achv < 70:
+            return 'Merah'
+        elif 70 <= achv <= 99:
+            return 'Kuning'
+        else:
+            return 'Hijau'
+
+    df['Status'] = df['Achv Mar Num'].apply(get_status)
+
+    # ========== WARNA ==========
     COLOR_RED = "#b42020"
     COLOR_BLUE = "#0f098e"
     COLOR_WHITE = "#ffffff"
@@ -52,16 +61,17 @@ with tabs[0]:
         "Hijau": COLOR_GREEN,
         "Hitam": COLOR_BLACK
     }
+
     status_order = ['Hitam', 'Hijau', 'Kuning', 'Merah']
 
+    # ========== FUNGSI HITUNG STATUS ==========
     def get_status_counts(data):
-     return {
-        "Merah": (data['Status'] == "Merah").sum(),
-        "Kuning": (data['Status'] == "Kuning").sum(),
-        "Hijau": (data['Status'] == "Hijau").sum(),
-        "Hitam": (data['Status'] == "Hitam").sum(),
-        "Lainnya": (~data['Status'].isin(["Merah", "Kuning", "Hijau", "Hitam"])).sum()
-    }
+        return {
+            "Merah": (data['Status'] == "Merah").sum(),
+            "Kuning": (data['Status'] == "Kuning").sum(),
+            "Hijau": (data['Status'] == "Hijau").sum(),
+            "Hitam": (data['Status'] == "Hitam").sum()
+        }
 
     global_counts = get_status_counts(df)
     fig_global = go.Figure()
@@ -74,9 +84,8 @@ with tabs[0]:
             text=[global_counts[status]],
             textposition='auto'
         ))
-
     fig_global.update_layout(
-        title="Total KPI Status",
+        title="Total KPI Status (Global)",
         yaxis_title="Jumlah KPI",
         xaxis_title="Status",
         barmode='stack',
@@ -87,8 +96,10 @@ with tabs[0]:
         height=350
     )
 
+    # ========== CHART TRAFFIC LIGHT PER PERSPECTIVE ==========
     perspectives = df['Perspective'].dropna().unique().tolist()
     perspective_counts = {p: get_status_counts(df[df['Perspective'] == p]) for p in perspectives}
+
     fig_persp = go.Figure()
     for status in status_order:
         fig_persp.add_trace(go.Bar(
@@ -113,19 +124,22 @@ with tabs[0]:
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
 
+    # ========== DISPLAY CHARTS ==========
     col1, col2 = st.columns(2)
     with col1:
         st.plotly_chart(fig_global, use_container_width=True)
     with col2:
         st.plotly_chart(fig_persp, use_container_width=True)
 
+    # ========== FILTER PERSPECTIVE ==========
     st.markdown("<h3 style='color:#b42020; font-size:20px;'>Filter Perspective (klik salah satu):</h3>", unsafe_allow_html=True)
-
     cols = st.columns(2)
     if 'selected_persp' not in st.session_state:
         st.session_state.selected_persp = perspectives[0]
+
     def select_persp(p):
         st.session_state.selected_persp = p
+
     for i, p in enumerate(perspectives):
         col = cols[i % 2]
         is_selected = (st.session_state.selected_persp == p)
@@ -136,7 +150,9 @@ with tabs[0]:
     selected_perspective = st.session_state.selected_persp
     filtered_df = df[df['Perspective'] == selected_perspective]
 
+    # ========== TABEL ==========
     st.markdown(f"<h3 style='color:#b42020; font-size:20px;'>Daftar KPI untuk Perspective: {selected_perspective}</h3>", unsafe_allow_html=True)
+
     def style_row(row):
         color = status_color_map.get(row['Status'], '#ffffff')
         font_color = 'white' if row['Status'] in ['Merah', 'Hijau', 'Hitam'] else 'black'
@@ -146,27 +162,29 @@ with tabs[0]:
     table_df = filtered_df[display_cols].copy()
     st.dataframe(table_df.style.apply(style_row, axis=1), use_container_width=True)
 
+    # ========== DETAIL CHART ==========
     st.markdown("<h3 style='color:#b42020; font-size:20px;'>Pilih KPI untuk lihat detail chart:</h3>", unsafe_allow_html=True)
     selected_kpi_code = None
     cols_per_row = 4
+
     for i in range(0, len(table_df), cols_per_row):
         cols_buttons = st.columns(cols_per_row)
-        for j, row in enumerate(table_df.iloc[i:i+cols_per_row].itertuples()):
-            if cols_buttons[j].button(f"Show Chart {row[1]}", key=f"btn_{row[1]}"):
-                selected_kpi_code = row[1]
+        for j, row in enumerate(table_df.iloc[i:i + cols_per_row].itertuples()):
+            if j < len(cols_buttons):
+                if cols_buttons[j].button(f"Show Chart {row[1]}", key=f"btn_{row[1]}"):
+                    selected_kpi_code = row[1]
 
     if selected_kpi_code:
         kpi_row = filtered_df[filtered_df['Kode KPI'] == selected_kpi_code].iloc[0]
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        x_data = months
-        target_values = [kpi_row.get(f'Target {m}', None) for m in months]
-        actual_values = [kpi_row.get(f'Actual {m}', None) for m in months]
-        achv_values = [kpi_row.get(f'Achv {m}', None) for m in months]
+        target_values = [kpi_row[f'Target {m}'] for m in months]
+        actual_values = [kpi_row[f'Actual {m}'] for m in months]
+        achv_values = [kpi_row[f'Achv {m}'] for m in months]
 
         actual_colors = []
         for achv in achv_values:
             try:
-                val = float(str(achv).replace('%','').replace(',','.'))
+                val = float(str(achv).replace('%', '').replace(',', '.'))
                 if val < 70:
                     actual_colors.append(COLOR_RED)
                 elif 70 <= val <= 99:
@@ -177,20 +195,16 @@ with tabs[0]:
                 actual_colors.append(COLOR_BLACK)
 
         fig_detail = go.Figure()
-
-        # Bar Target
         fig_detail.add_trace(go.Bar(
-            x=x_data,
+            x=months,
             y=target_values,
             name="Target",
             marker_color="gray",
             text=[f"{v}" if pd.notna(v) else "" for v in target_values],
             textposition="outside"
         ))
-
-        # Bar Actual
         fig_detail.add_trace(go.Bar(
-            x=x_data,
+            x=months,
             y=[v if pd.notna(v) else None for v in actual_values],
             name="Actual",
             marker_color=actual_colors,
@@ -205,9 +219,11 @@ with tabs[0]:
             yaxis_title="Nilai",
             height=450
         )
+
         st.plotly_chart(fig_detail, use_container_width=True)
 
-    st.markdown("📌 Daftar KPI dengan Status N/A (Data tidak lengkap)")
+    # ========== TAMBAHAN - KPI HITAM ==========
+    st.markdown("📌 Daftar KPI dengan Status Hitam (Data tidak lengkap)")
     df_hitam = df[df['Status'] == 'Hitam'][['Kode KPI', 'KPI']]
     if df_hitam.empty:
         st.info("Tidak ada KPI dengan status Hitam.")
@@ -218,6 +234,7 @@ with tabs[0]:
 with tabs[1]:
     st.title("Strategic Initiatives")
 
+    # ======= Load Data =======
     si_path = "Strategic initiatives 10.csv"
     if not os.path.exists(si_path):
         st.warning(f"File SI tidak ditemukan: {si_path}")
@@ -225,8 +242,10 @@ with tabs[1]:
 
     si_df = pd.read_csv(si_path)
     si_df.columns = si_df.columns.str.strip().str.lower()
+    si_df['program'] = si_df['program'].str.strip()
+    si_df['status'] = si_df['status'].str.strip()
 
-    # Warna status dan urutan
+    # Define order and color mapping
     si_status_colors = {
         'Unspecified Timeline': '#fbc4dc',
         'Unspecified DoD': '#f6b8f3',
@@ -239,7 +258,7 @@ with tabs[1]:
     }
     status_order = list(si_status_colors.keys())
 
-    # Horizontal Bar Chart Jumlah SI per Status (sebelum donut chart)
+    # Horizontal Bar Chart
     status_counts = si_df['status'].value_counts().reindex(status_order).fillna(0).astype(int)
     status_df = pd.DataFrame({
         'Status': status_counts.index,
@@ -265,7 +284,7 @@ with tabs[1]:
     bar_fig.update_traces(textposition='outside')
     st.plotly_chart(bar_fig, use_container_width=True)
 
-    # List program untuk donut chart & tombol filter
+    # List program
     program_list = si_df['program'].dropna().unique().tolist()
     if 'selected_program' not in st.session_state:
         st.session_state.selected_program = program_list[0]
@@ -273,16 +292,21 @@ with tabs[1]:
     def select_program(p):
         st.session_state.selected_program = p
 
-    # DONUT CHART: semua tampil dulu, 3 per baris
+    # Grid Layout Donut Charts (3 Kolom Per Baris)
     cols_per_row = 3
-    for i in range(0, len(program_list), cols_per_row):
+    num_cols = len(program_list)
+    num_rows = (num_cols + cols_per_row - 1) // cols_per_row
+
+    for i in range(num_rows):
         row = st.columns(cols_per_row)
         for j in range(cols_per_row):
-            idx = i + j
-            if idx < len(program_list):
+            idx = i * cols_per_row + j
+            if idx < num_cols:
                 program = program_list[idx]
                 with row[j]:
-                    st.button(f"{program}", key=f"btn_{program}", on_click=select_program, args=(program,))
+                    if st.button(f"{program}", key=f"btn_{program}"):
+                        select_program(program)
+
                     prog_df = si_df[si_df['program'] == program]
                     counts = prog_df['status'].value_counts().reindex(status_order).fillna(0)
                     donut = px.pie(
@@ -290,28 +314,33 @@ with tabs[1]:
                         values=counts.values,
                         hole=0.6,
                         color=counts.index,
-                        color_discrete_map=si_status_colors,
+                        color_discrete_map=si_status_colors
                     )
                     donut.update_traces(textinfo='none')
                     donut.update_layout(
-                        showlegend=True,
+                        showlegend=False,
                         height=300,
                         margin=dict(t=10, b=10)
                     )
                     st.plotly_chart(donut, use_container_width=True)
 
-    # TABEL DITAMPILKAN TERAKHIR SETELAH SEMUA DONUT
+    # ========== TABEL DETAIL SI ==========
     selected_program = st.session_state.selected_program
-    st.markdown(f"### Total Strategic Initiatives untuk {selected_program}: **{len(si_df[si_df['program'] == selected_program])}**")
     prog_df = si_df[si_df['program'] == selected_program]
-    table_df = prog_df[['no', 'nama si', 'related kpi', 'pic', 'status', '% completed dod', 'deadline', 'milestone']].copy()
 
-    def style_si_row(row):
-        color = si_status_colors.get(row['status'], 'white')
-        if row['status'] in ['On Track', 'Unspecified Timeline', 'Not Started']:
-            font_color = 'black'
-        else:
-            font_color = 'white'
-        return [f'background-color: {color}; color: {font_color};'] * len(row)
+    if not prog_df.empty:
+        table_df = prog_df[[
+            'no', 'nama si', 'related kpi', 'pic', 'status', '% completed dod', 'deadline', 'milestone'
+        ]].copy()
 
-    st.dataframe(table_df.style.apply(style_si_row, axis=1), use_container_width=True)
+        def style_si_row(row):
+            color = si_status_colors.get(row['status'], 'white')
+            font_color = 'black' if color in ['#ffe600', '#ffffff'] else 'white'
+            return [f'background-color: {color}; color: {font_color};'] * len(row)
+
+        st.markdown(f"### Strategic Initiatives untuk Program: **{selected_program}**")
+        styled_table = table_df.style.apply(style_si_row, axis=1)
+        st.dataframe(styled_table, use_container_width=True)
+        st.markdown(f"**Total SI:** {len(table_df)}")
+    else:
+        st.warning(f"Tidak ada data untuk program '{selected_program}'.")
