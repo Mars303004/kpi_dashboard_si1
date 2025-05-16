@@ -17,7 +17,6 @@ with tabs[0]:
     if not os.path.exists(file_path):
         st.error(f"File '{file_path}' tidak ditemukan.")
         st.stop()
-
     df = pd.read_csv(file_path)
 
     # ========== DATA PREPARATION ==========
@@ -30,7 +29,7 @@ with tabs[0]:
             st.stop()
 
     # Normalisasi kolom 'Achv Mar' ke bentuk numerik
-       df['Achv Mar Num'] = pd.to_numeric(df['Achv Mar'].str.replace('%','').str.replace(',','.'), errors='coerce')
+    df['Achv Mar Num'] = pd.to_numeric(df['Achv Mar'].str.replace('%','').str.replace(',','.'), errors='coerce')
 
     def get_status(achv):
         if pd.isna(achv):
@@ -41,31 +40,32 @@ with tabs[0]:
             return 'Kuning'
         else:
             return 'Hijau'
-            df['Status'] = df['Achv Mar Num'].apply(get_status)
-        
-            COLOR_RED = "#b42020"
-            COLOR_BLUE = "#0f098e"
-            COLOR_WHITE = "#ffffff"
-            COLOR_GREEN = "#1bb934"
-            COLOR_YELLOW = "#ffe600"
-            COLOR_BLACK = "#222222"
-        
-            status_color_map = {
-                "Merah": COLOR_RED,
-                "Kuning": COLOR_YELLOW,
-                "Hijau": COLOR_GREEN,
-                "Hitam": COLOR_BLACK
-            }
-            status_order = ['Hitam', 'Hijau', 'Kuning', 'Merah']
-        
-            def get_status_counts(data):
-                return {
-                    "Merah": (data['Status'] == "Merah").sum(),
-                    "Kuning": (data['Status'] == "Kuning").sum(),
-                    "Hijau": (data['Status'] == "Hijau").sum(),
-                    "Hitam": (data['Status'] == "Hitam").sum()
-                }
 
+    df['Status'] = df['Achv Mar Num'].apply(get_status)
+
+    COLOR_RED = "#b42020"
+    COLOR_BLUE = "#0f098e"
+    COLOR_WHITE = "#ffffff"
+    COLOR_GREEN = "#1bb934"
+    COLOR_YELLOW = "#ffe600"
+    COLOR_BLACK = "#222222"
+
+    status_color_map = {
+        "Merah": COLOR_RED,
+        "Kuning": COLOR_YELLOW,
+        "Hijau": COLOR_GREEN,
+        "Hitam": COLOR_BLACK
+    }
+
+    status_order = ['Hitam', 'Hijau', 'Kuning', 'Merah']
+
+    def get_status_counts(data):
+        return {
+            "Merah": (data['Status'] == "Merah").sum(),
+            "Kuning": (data['Status'] == "Kuning").sum(),
+            "Hijau": (data['Status'] == "Hijau").sum(),
+            "Hitam": (data['Status'] == "Hitam").sum()
+        }
 
     global_counts = get_status_counts(df)
     fig_global = go.Figure()
@@ -93,7 +93,6 @@ with tabs[0]:
     # ========== CHART TRAFFIC LIGHT PER PERSPECTIVE ==========
     perspectives = df['Perspective'].dropna().unique().tolist()
     perspective_counts = {p: get_status_counts(df[df['Perspective'] == p]) for p in perspectives}
-
     fig_persp = go.Figure()
     for status in status_order:
         fig_persp.add_trace(go.Bar(
@@ -104,7 +103,6 @@ with tabs[0]:
             text=[perspective_counts[p][status] for p in perspectives],
             textposition='auto'
         ))
-
     fig_persp.update_layout(
         barmode='stack',
         title="KPI Status per Perspective",
@@ -160,7 +158,6 @@ with tabs[0]:
     st.markdown("<h3 style='color:#b42020; font-size:20px;'>Pilih KPI untuk lihat detail chart:</h3>", unsafe_allow_html=True)
     selected_kpi_code = None
     cols_per_row = 4
-
     for i in range(0, len(table_df), cols_per_row):
         cols_buttons = st.columns(cols_per_row)
         for j, row in enumerate(table_df.iloc[i:i + cols_per_row].itertuples()):
@@ -174,7 +171,6 @@ with tabs[0]:
         target_values = [kpi_row[f'Target {m}'] for m in months]
         actual_values = [kpi_row[f'Actual {m}'] for m in months]
         achv_values = [kpi_row[f'Achv {m}'] for m in months]
-
         actual_colors = []
         for achv in achv_values:
             try:
@@ -213,7 +209,6 @@ with tabs[0]:
             yaxis_title="Nilai",
             height=450
         )
-
         st.plotly_chart(fig_detail, use_container_width=True)
 
     # ========== TAMBAHAN - KPI HITAM ==========
@@ -227,15 +222,16 @@ with tabs[0]:
 # ================== TAB 2: STRATEGIC INITIATIVES ==================
 with tabs[1]:
     st.title("Strategic Initiatives")
-
     si_path = "Strategic initiatives 10.csv"
     if not os.path.exists(si_path):
         st.warning(f"File SI tidak ditemukan: {si_path}")
         st.stop()
-
     si_df = pd.read_csv(si_path)
+    
+    # Normalize column names just in case
     si_df.columns = si_df.columns.str.strip().str.lower()
-
+    
+    # Define order and color mapping
     si_status_colors = {
         'Unspecified Timeline': '#fbc4dc',
         'Unspecified DoD': '#f6b8f3',
@@ -244,10 +240,36 @@ with tabs[1]:
         'Done': '#a9e7fa',
         'Delay': '#ff5a5a',
         'At Risk': '#ff914d',
-        'On Track': '#a7f4cb',
+        'On Track': '#a7f4cb',   
     }
     status_order = list(si_status_colors.keys())
 
+    # Horizontal Bar Chart Jumlah SI per Status
+    status_counts = si_df['status'].value_counts().reindex(status_order).fillna(0).astype(int)
+    status_df = pd.DataFrame({
+        'Status': status_counts.index,
+        'Jumlah': status_counts.values
+    })
+    bar_fig = px.bar(
+        status_df,
+        x='Jumlah',
+        y='Status',
+        orientation='h',
+        text='Jumlah',
+        color='Status',
+        color_discrete_map=si_status_colors,
+        title="Jumlah Strategic Initiatives per Status"
+    )
+    bar_fig.update_layout(
+        height=400,
+        xaxis_title="Jumlah",
+        yaxis_title="Status",
+        margin=dict(t=40, b=40),
+    )
+    bar_fig.update_traces(textposition='outside')
+    st.plotly_chart(bar_fig, use_container_width=True)
+
+    # List program untuk donut chart
     program_list = si_df['program'].dropna().unique().tolist()
     if 'selected_program' not in st.session_state:
         st.session_state.selected_program = program_list[0]
