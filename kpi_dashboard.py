@@ -22,18 +22,22 @@ with tabs[0]:
             st.error(f"Kolom '{col}' tidak ditemukan di data.")
             st.stop()
 
-    df['Achv Mar Num'] = pd.to_numeric(df['Achv Mar'].str.replace('%','').str.replace(',','.'), errors='coerce')
-
-    def get_status(achv):
-        if pd.isna(achv):
-            return 'Hitam'
-        elif achv < 70:
-            return 'Merah'
-        elif 70 <= achv <= 99:
-            return 'Kuning'
-        else:
-            return 'Hijau'
-    df['Status'] = df['Achv Mar Num'].apply(get_status)
+    # Normalisasi kolom 'Achv Mar' ke bentuk numerik
+        df['Achv Mar Num'] = pd.to_numeric(df['Achv Mar'].str.replace('%', '').str.replace(',', '.'), errors='coerce')
+        
+        # Fungsi get_status tetap sama
+        def get_status(achv):
+            if pd.isna(achv):
+                return 'Hitam'
+            elif achv < 70:
+                return 'Merah'
+            elif 70 <= achv <= 99:
+                return 'Kuning'
+            else:
+                return 'Hijau'
+        
+        # Hitung status berdasarkan Achv Mar
+        df['Status'] = df['Achv Mar Num'].apply(get_status)
 
     COLOR_RED = "#b42020"
     COLOR_BLUE = "#0f098e"
