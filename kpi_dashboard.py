@@ -41,30 +41,30 @@ with tabs[0]:
             return 'Kuning'
         else:
             return 'Hijau'
-    df['Status'] = df['Achv Mar Num'].apply(get_status)
-
-    COLOR_RED = "#b42020"
-    COLOR_BLUE = "#0f098e"
-    COLOR_WHITE = "#ffffff"
-    COLOR_GREEN = "#1bb934"
-    COLOR_YELLOW = "#ffe600"
-    COLOR_BLACK = "#222222"
-
-    status_color_map = {
-        "Merah": COLOR_RED,
-        "Kuning": COLOR_YELLOW,
-        "Hijau": COLOR_GREEN,
-        "Hitam": COLOR_BLACK
-    }
-    status_order = ['Hitam', 'Hijau', 'Kuning', 'Merah']
-
-    def get_status_counts(data):
-        return {
-            "Merah": (data['Status'] == "Merah").sum(),
-            "Kuning": (data['Status'] == "Kuning").sum(),
-            "Hijau": (data['Status'] == "Hijau").sum(),
-            "Hitam": (data['Status'] == "Hitam").sum()
-        }
+            df['Status'] = df['Achv Mar Num'].apply(get_status)
+        
+            COLOR_RED = "#b42020"
+            COLOR_BLUE = "#0f098e"
+            COLOR_WHITE = "#ffffff"
+            COLOR_GREEN = "#1bb934"
+            COLOR_YELLOW = "#ffe600"
+            COLOR_BLACK = "#222222"
+        
+            status_color_map = {
+                "Merah": COLOR_RED,
+                "Kuning": COLOR_YELLOW,
+                "Hijau": COLOR_GREEN,
+                "Hitam": COLOR_BLACK
+            }
+            status_order = ['Hitam', 'Hijau', 'Kuning', 'Merah']
+        
+            def get_status_counts(data):
+                return {
+                    "Merah": (data['Status'] == "Merah").sum(),
+                    "Kuning": (data['Status'] == "Kuning").sum(),
+                    "Hijau": (data['Status'] == "Hijau").sum(),
+                    "Hitam": (data['Status'] == "Hitam").sum()
+                }
 
 
     global_counts = get_status_counts(df)
