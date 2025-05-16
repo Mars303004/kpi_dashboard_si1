@@ -50,13 +50,14 @@ with tabs[0]:
     }
     status_order = ['Hitam', 'Hijau', 'Kuning', 'Merah']
 
-    def get_status_counts(data):
-        return {
-            "Merah": (data['Status'] == "Merah").sum(),
-            "Kuning": (data['Status'] == "Kuning").sum(),
-            "Hijau": (data['Status'] == "Hijau").sum(),
-            "Hitam": (data['Status'] == "Hitam").sum()
-        }
+   def get_status_counts(data):
+    return {
+        "Merah": (data['Status'] == "Merah").sum(),
+        "Kuning": (data['Status'] == "Kuning").sum(),
+        "Hijau": (data['Status'] == "Hijau").sum(),
+        "Hitam": (data['Status'] == "Hitam").sum(),
+        "Lainnya": (~data['Status'].isin(["Merah", "Kuning", "Hijau", "Hitam"])).sum()
+    }
 
     global_counts = get_status_counts(df)
     fig_global = go.Figure()
